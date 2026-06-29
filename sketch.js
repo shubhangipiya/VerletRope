@@ -1,6 +1,5 @@
 let letters = []
 let queue = []
-let isDown = false
 
 function setup() {
   createCanvas(600, 600)
@@ -87,13 +86,7 @@ function draw() {
     }
   }
   
-  // auto extract next letter from queue while mouse is held
-  if (isDown && queue.length > 0) {
-    let next = queue.shift() // take first letter from queue
-    next.peeled = true
-    next.px = next.x
-    next.py = next.y
-  }
+
   
   // update physics for peeled letters
   for (let l of letters) {
@@ -119,10 +112,16 @@ function draw() {
   }
 }
 
-function mousePressed() {
-  isDown = true
+function mouseDragged() {
+  if (queue.length > 0) {
+    let next = queue.shift()
+    next.peeled = true
+    next.px = next.x
+    next.py = next.y
+  }
 }
 
+
 function mouseReleased() {
-  isDown = false
+  // nothing happens on release, just stops peeling
 }
