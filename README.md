@@ -22,4 +22,4 @@ with realistic physics — gravity, bounce, and rotation.
 
 ## Live demo
 
-[https://github.com/shubhangipiya/VerletRope]
+[https://shubhangipiya.github.io/VerletRope/]
