@@ -7,16 +7,36 @@ let peelDelay = 50
 let grabbedLetter = null
 let grabOffsetX = 0
 let grabOffsetY = 0
+let stickerImages = []
+let stickers = []
 
 const DAMPING = 0.97
 const GRAVITY = 0.15
 const ITERATIONS = 12
+
+function preload() {
+  stickerImages = [
+    loadImage('portfolio update/icedmatchalatte.png'),
+    loadImage('portfolio update/goodvibes.png'),
+    loadImage('portfolio update/bow.png'),
+    loadImage('portfolio update/matchatogo.png'),
+    loadImage('portfolio update/whisk.png'),
+    loadImage('portfolio update/strawberry.png'),
+    loadImage('portfolio update/hot.png'),
+    loadImage('portfolio update/pinkcup.png'),
+    loadImage('portfolio update/curvyglass.png'),
+    loadImage('portfolio update/flower.png'),
+    loadImage('portfolio update/girlie.png'),
+    // add the rest of your filenames here, matching your folder exactly
+  ]
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight)
   textSize(20)
   textFont("Georgia")
   buildLetters()
+  placeStickers()  
 }
 
 function buildLetters() {
@@ -24,37 +44,169 @@ function buildLetters() {
   queue = []
   ropeOrder = []
 
-  let paragraph = "AI was trained by reading an enormous amount of text from the internet. Billions of pages including Stack Overflow, GitHub, coding tutorials, documentation, everything. So when you ask a coding question, it's not thinking the way you do. It's more like it has seen thousands of similar problems and solutions before and is pattern matching to your situation."
-
+ let paragraph = "Matcha isn't just green tea ground into powder. The tea plants are shaded for weeks before harvest, which boosts chlorophyll and amino acids, giving matcha its vivid green color and umami depth. Unlike steeped tea where you discard the leaves, with matcha you whisk the entire leaf into your cup, which means you're consuming far more caffeine and antioxidants than a regular cup of green tea."
   textSize(20)
   textFont("Georgia")
 
-  let maxWidth = min(550, windowWidth - 100)
+  let maxWidth = min(490, windowWidth - 100)
   let startX = (windowWidth - maxWidth) / 2
   let x = startX
   let y = 80
 
-  for (let i = 0; i < paragraph.length; i++) {
-    let ch = paragraph[i]
-    let w = textWidth(ch)
-    if (x + w > startX + maxWidth) {
-      x = startX
+  let words = paragraph.split(" ")
+  let currentLine = []
+  let allLines = []
+  
+  for (let w = 0; w < words.length; w++) {
+    let word = words[w]
+    let forceBreak = false
+  
+    if (word.includes("\n")) {
+      forceBreak = true
+      word = word.replace("\n", "")
+    }
+  
+    word = word + (w < words.length - 1 ? " " : "")
+    let wordWidth = textWidth(word)
+  
+    if (x + wordWidth > maxWidth && x > 0) {
+      allLines.push({ letters: currentLine, width: x, y: y })
+      currentLine = []
+      x = 0
       y = y + 28
     }
+  
+    for (let i = 0; i < word.length; i++) {
+      let ch = word[i]
+      let w2 = textWidth(ch)
+      currentLine.push({ char: ch, xOffset: x, w: w2 })
+      x = x + w2
+    }
+  
+    if (forceBreak) {
+      allLines.push({ letters: currentLine, width: x, y: y })
+      currentLine = []
+      x = 0
+      y = y + 28
+    }
+  }
+  allLines.push({ letters: currentLine, width: x, y: y })
+
+  // now center each line and build final letters array
+// justify each line except the last one
+for (let lineIndex = 0; lineIndex < allLines.length; lineIndex++) {
+  let line = allLines[lineIndex]
+  let isLastLine = lineIndex === allLines.length - 1
+
+  if (isLastLine || line.letters.length === 0) {
+    // last line stays left-aligned within centered block, not stretched
+    let lineStartX = startX + (maxWidth - line.width) / 2
+    for (let l of line.letters) {
+      let finalX = lineStartX + l.xOffset
+      letters.push({
+        index: letters.length,
+        char: l.char,
+        x: finalX, y: line.y,
+        homeX: finalX, homeY: line.y,
+        px: finalX, py: line.y,
+        locked: true,
+        ropeIndex: -1
+      })
+    }
+    continue
+  }
+
+  // count spaces in this line to distribute extra width
+  let spaceCount = line.letters.filter(l => l.char === ' ').length
+  let extraSpace = maxWidth - line.width
+  let extraPerSpace = spaceCount > 0 ? extraSpace / spaceCount : 0
+
+  let cursorX = startX
+  for (let l of line.letters) {
     letters.push({
-      index: i,
-      char: ch,
-      x: x, y: y,
-      homeX: x, homeY: y,
-      px: x, py: y,
-      locked: true,   // locked = stays in paragraph
+      index: letters.length,
+      char: l.char,
+      x: cursorX, y: line.y,
+      homeX: cursorX, homeY: line.y,
+      px: cursorX, py: line.y,
+      locked: true,
       ropeIndex: -1
     })
-    x = x + w
+    cursorX += l.w
+    if (l.char === ' ') {
+      cursorX += extraPerSpace
+    }
   }
+}
+
 
   queue = buildQueue()
   ropeOrder = queue.slice()
+}
+
+function placeStickers() {
+  stickers = []
+  let maxWidth = min(550, windowWidth - 100)
+  let paragraphLeft = (windowWidth - maxWidth) / 2
+  let paragraphRight = paragraphLeft + maxWidth
+
+  let layout = [
+    { imgIndex: 0, side: 'left', xPercent: 0.3, yPercent: 0.1, targetSize: 110, rotation: 0.15 },
+    { imgIndex: 1, side: 'right', xPercent: 0.2, yPercent: 0.4, targetSize: 90, rotation: 0.3 },
+    { imgIndex: 2, side: 'left', xPercent: 0.5, yPercent: 0.3, targetSize: 60 },
+    { imgIndex: 3, side: 'right', xPercent: 0.2, yPercent: 0.05, targetSize: 100 },
+    { imgIndex: 4, side: 'left', xPercent: 0.2, yPercent: 0.4, targetSize: 90 },
+    { imgIndex: 5, side: 'right', xPercent: 0.5, yPercent: 0.55, targetSize: 100, rotation: 0.3  },
+    { imgIndex: 6, side: 'left', xPercent: 0.45, yPercent: 0.6, targetSize: 110 },
+    { imgIndex: 7, side: 'right', xPercent: 0.3, yPercent: 0.8, targetSize: 100 },
+    { imgIndex: 9, side: 'right', xPercent: 0.6, yPercent: 0.25, targetSize: 60 },
+    { imgIndex: 10, side: 'left', xPercent: 0.2, yPercent: 0.8, targetSize: 80, rotation: 0.3  }
+  ]
+
+  for (let entry of layout) {
+    let img = stickerImages[entry.imgIndex]
+    if (!img) continue
+
+    let x
+    if (entry.side === 'left') {
+      x = entry.xPercent * (paragraphLeft - 40) + 20
+    } else {
+      let space = windowWidth - paragraphRight - 40
+      x = paragraphRight + 20 + entry.xPercent * space
+    }
+
+    let y = 60 + entry.yPercent * (windowHeight - 150)
+
+    let aspectRatio = img.width / img.height
+    let w, h
+    if (aspectRatio > 1) {
+      w = entry.targetSize
+      h = entry.targetSize / aspectRatio
+    } else {
+      h = entry.targetSize
+      w = entry.targetSize * aspectRatio
+    }
+
+    stickers.push({
+      img: img,
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      rotation: entry.rotation
+    })
+  }
+}
+
+function drawStickers() {
+  for (let s of stickers) {
+    push()
+    translate(s.x, s.y)
+    rotate(s.rotation)
+    imageMode(CENTER)
+    image(s.img, 0, 0, s.w, s.h)
+    pop()
+  }
 }
 
 function buildQueue() {
@@ -79,6 +231,7 @@ function buildQueue() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight)
   buildLetters()
+  placeStickers()  
 }
 
 function peelLetter(l) {
@@ -155,6 +308,7 @@ function solveLetterCollisions() {
 function draw() {
   background(244, 239, 230)  // soft cream/oat
   drawGrain()
+  drawStickers()  
   let sageGreen = color(124, 148, 115)  // muted sage green
   fill(sageGreen)
   noStroke()
